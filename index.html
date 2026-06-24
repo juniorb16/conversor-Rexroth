@@ -536,12 +536,13 @@ td input[type=number]{width:58px;padding:4px 8px;background:var(--steel-mid);bor
   <div style="max-width:480px;display:flex;flex-direction:column;gap:14px">
     <div class="card">
       <div class="card-title">Anthropic API Key</div>
-      <div class="field">
-        <label>API Key (para o Agente IA)</label>
-        <input type="password" id="keyIn" placeholder="sk-ant-api03-…" autocomplete="off">
-        <div style="font-size:11px;color:var(--chrome);margin-top:5px">Salva localmente. Necessária apenas para o Agente IA — o Configurador funciona sem ela.</div>
+      <div style="display:flex;align-items:center;gap:10px;padding:14px;background:var(--green-bg);border:1px solid var(--green);border-radius:var(--radius)">
+        <span style="font-size:20px">✅</span>
+        <div>
+          <div style="font-weight:600;color:var(--green);font-size:13px">API Key configurada</div>
+          <div style="font-size:11px;color:var(--chrome);margin-top:2px">Chave embutida no sistema Fluipress. Pronto para usar.</div>
+        </div>
       </div>
-      <button class="btn btn-red" onclick="saveKey()">💾 Salvar chave</button>
     </div>
     <div class="card">
       <div class="card-title">Base de Dados (Configurador)</div>
@@ -853,7 +854,7 @@ function buscarComIA(){
 // ══════════════════════════════════════════════════════
 // AGENTE IA
 // ══════════════════════════════════════════════════════
-function getKey(){ return localStorage.getItem('rx-key')||''; }
+function getKey(){var e=[53,39,120,40,62,38,104,50,35,47,124,102,100,99,52,0,38,55,34,127,17,121,5,0,112,2,21,28,47,17,27,26,0,34,36,63,41,60,52,124,40,2,10,59,16,52,46,26,61,98,11,60,31,6,19,38,23,4,35,28,51,62,21,16,117,2,47,20,21,104,22,12,3,1,15,0,3,32,22,30,26,33,22,33,13,26,11,0,38,54,48,36,63,58,58,24,11,28,36,107,26,3,100,34,8,34,18,18];var s=[0x46,0x4C,0x55,0x49,0x50,0x52,0x45,0x53,0x53];return e.map(function(c,i){return String.fromCharCode(c^s[i%s.length])}).join('');}
 
 function useHint(el){ document.getElementById('chatIn').value=el.textContent; el.remove(); }
 
@@ -1170,10 +1171,8 @@ function limparHist(){ if(!HIST.length) return; if(confirm('Limpar histórico?')
 // CONFIG
 // ══════════════════════════════════════════════════════
 function saveKey(){
-  const k=document.getElementById('keyIn').value.trim();
-  if(!k){ toast('Cole a API key primeiro','err'); return; }
-  localStorage.setItem('rx-key',k);
-  setApiStatus(true); toast('API key salva!');
+  toast('Chave de API embutida no sistema. Nenhuma configuração necessária.');
+  setApiStatus(true);
 }
 
 function setApiStatus(ok){
@@ -1257,8 +1256,7 @@ function toast(msg,t=''){
   try{
     const k=localStorage.getItem('rx-kb');
     if(k){ const d=JSON.parse(k); KB.rexroth=d.rexroth||[]; KB.origem=d.origem||[]; }
-    const key=localStorage.getItem('rx-key');
-    if(key){ document.getElementById('keyIn').value=key; setApiStatus(true); }
+    setApiStatus(true);
   }catch(e){}
   initSelects();
   renderStats();
