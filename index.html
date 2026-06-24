@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rexroth Crossover — Fluipress</title>
+<style>
+:root{
+  --red:#CC0000;--red-dark:#8B0000;--red-glow:rgba(204,0,0,.15);
+  --steel:#141820;--steel-mid:#1E2530;--steel-card:#252D3A;
+  --steel-light:#2E3A4A;--steel-hover:#354050;
+  --chrome:#7A8899;--chrome-light:#A8B5C2;
+  --white:#F4F6F8;--dim:#9BA8B5;
+  --yellow:#F5A623;--yellow-bg:rgba(245,166,35,.12);
+  --green:#2ECC71;--green-bg:rgba(46,204,113,.12);
+  --orange:#FF6B35;--orange-bg:rgba(255,107,53,.12);
+  --border:#2A3340;--radius:8px;
+  --mono:'Courier New',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--steel);color:var(--white);min-height:100vh;display:flex;flex-direction:column;font-size:14px}
+
+/* HEADER */
+header{background:var(--steel-mid);border-bottom:3px solid var(--red);padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;box-shadow:0 2px 16px rgba(0,0,0,.4)}
+.logo{display:flex;align-items:center;gap:12px}
+.logo-icon{width:36px;height:36px;background:var(--red);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:15px;color:#fff;box-shadow:0 0 12px var(--red-glow)}
+.logo-name{font-size:16px;font-weight:700}
+.logo-sub{font-size:11px;color:var(--chrome);display:block}
+.api-pill{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--chrome);background:var(--steel-card);border:1px solid var(--border);border-radius:20px;padding:5px 14px;cursor:pointer;transition:.15s}
+.api-pill:hover{border-color:var(--red)}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--border)}
+.dot.ok{background:var(--green);box-shadow:0 0 6px var(--green)}
+.dot.err{background:var(--red)}
+
+/* APP */
+.app{display:flex;flex:1;height:calc(100vh - 58px);overflow:hidden}
+
+/* SIDEBAR */
+.sidebar{width:215px;flex-shrink:0;background:var(--steel-mid);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:14px 10px;gap:3px}
+.nav-btn{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius);cursor:pointer;color:var(--chrome);font-size:13px;font-weight:500;border:none;background:transparent;width:100%;text-align:left;transition:.15s}
+.nav-btn:hover{background:var(--steel-light);color:var(--white)}
+.nav-btn.active{background:var(--red-glow);color:var(--white);border-left:3px solid var(--red);padding-left:9px}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-sep{height:1px;background:var(--border);margin:6px 4px}
+.nav-lbl{font-size:10px;color:var(--chrome);text-transform:uppercase;letter-spacing:.8px;padding:6px 12px 2px}
+.sb-footer{margin-top:auto;padding-top:12px}
+.sb-stat{background:var(--steel-card);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-size:11px;color:var(--chrome);margin-bottom:6px}
+.sb-stat strong{display:block;font-size:22px;font-weight:800;color:var(--white);margin-bottom:1px}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;padding:28px}
+.page{display:none}
+.page.active{display:block}
+
+/* CARDS */
+.card{background:var(--steel-card);border:1px solid var(--border);border-radius:12px;padding:22px}
+.card-sm{padding:14px}
+.card-title{font-size:10px;font-weight:700;letter-spacing:1px;color:var(--chrome);text-transform:uppercase;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+
+/* FORMS */
+.field{margin-bottom:14px}
+label{display:block;font-size:11px;font-weight:600;color:var(--chrome-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+input[type=text],input[type=password],select,textarea{width:100%;background:var(--steel-light);border:1px solid var(--border);color:var(--white);border-radius:var(--radius);padding:10px 13px;font-size:13px;outline:none;transition:border-color .15s;font-family:inherit;appearance:none}
+input[type=text]:focus,input[type=password]:focus,select:focus,textarea:focus{border-color:var(--red)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237A8899' stroke-width='1.5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;cursor:pointer}
+select:disabled{opacity:.4;cursor:not-allowed}
+textarea{resize:vertical;min-height:72px;line-height:1.5}
+
+/* BUTTONS */
+.btn{padding:9px 18px;border-radius:var(--radius);border:none;cursor:pointer;font-size:13px;font-weight:600;transition:.15s;display:inline-flex;align-items:center;gap:7px;font-family:inherit}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:var(--red-dark)}
+.btn-red:disabled{opacity:.4;cursor:not-allowed}
+.btn-mid{background:var(--steel-light);color:var(--white);border:1px solid var(--border)}
+.btn-mid:hover{background:var(--steel-hover)}
+.btn-ghost{background:transparent;color:var(--chrome);border:1px solid var(--border)}
+.btn-ghost:hover{color:var(--white);border-color:var(--chrome)}
+.btn-del{background:transparent;color:#FF4444;border:1px solid rgba(255,68,68,.3)}
+.btn-del:hover{background:rgba(255,68,68,.1)}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-full{width:100%;justify-content:center}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.3px}
+.bg-green{background:var(--green-bg);color:var(--green)}
+.bg-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.bg-red{background:var(--red-glow);color:#FF6666}
+.bg-orange{background:var(--orange-bg);color:var(--orange)}
+.bg-chrome{background:var(--steel-light);color:var(--chrome-light)}
+
+/* STATS BAR */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-item{background:var(--steel-card);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.stat-n{font-size:28px;font-weight:800;color:var(--red)}
+.stat-l{font-size:10px;color:var(--chrome);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+/* CONFIGURADOR */
+.config-grid{display:grid;grid-template-columns:380px 1fr;gap:22px}
+.generated-code{background:var(--steel);border:1px solid var(--steel-light);border-radius:var(--radius);padding:14px 16px;font-family:var(--mono);font-size:16px;color:var(--yellow);letter-spacing:1px;word-break:break-all;min-height:50px}
+
+/* RESULTADO */
+.result-empty{text-align:center;padding:60px 20px;color:var(--chrome)}
+.result-empty .ei{font-size:48px;margin-bottom:16px;opacity:.25}
+.result-card{background:var(--steel);border:2px solid var(--red);border-radius:10px;padding:22px;display:none}
+.result-card.visible{display:block}
+.result-code{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--white);letter-spacing:1px;margin:8px 0 18px}
+.result-meta{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px}
+.meta-item{background:var(--steel-mid);border-radius:var(--radius);padding:12px}
+.meta-item .mk{font-size:10px;color:var(--chrome);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.meta-item .mv{font-size:14px;font-weight:600}
+.meta-item .mv a{color:#FF6666;text-decoration:none}
+.meta-item .mv a:hover{text-decoration:underline}
+.warn-box{background:var(--yellow-bg);border:1px solid var(--yellow);border-radius:var(--radius);padding:11px 15px;font-size:12px;color:var(--yellow);margin-bottom:14px;display:flex;gap:8px}
+.notes-box{background:var(--steel-mid);border-radius:var(--radius);padding:12px 15px;font-size:13px;color:var(--chrome-light);line-height:1.6;margin-bottom:16px}
+.no-match{background:var(--steel);border:2px dashed var(--steel-light);border-radius:10px;padding:40px;text-align:center;display:none}
+.no-match.visible{display:block}
+
+/* AGENTE IA */
+.agent-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;height:calc(100vh - 220px)}
+.chat-col{display:flex;flex-direction:column;min-height:0}
+.chat-box{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px;max-height:calc(100vh - 430px)}
+.msg{display:flex;gap:10px;animation:fu .2s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg-av{width:28px;height:28px;border-radius:7px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700}
+.msg-u .msg-av{background:var(--steel-light)}
+.msg-a .msg-av{background:var(--red);box-shadow:0 0 10px var(--red-glow)}
+.msg-body{flex:1}
+.msg-who{font-size:10px;font-weight:700;letter-spacing:.5px;color:var(--chrome);text-transform:uppercase;margin-bottom:4px}
+.bubble{background:var(--steel-card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.65;color:var(--chrome-light)}
+.msg-u .bubble{background:var(--steel-light);color:var(--white)}
+.msg-a .bubble{border-color:rgba(204,0,0,.2)}
+.bubble code{background:var(--steel);padding:1px 5px;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--yellow)}
+.bubble strong{color:var(--white)}
+.bubble table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px}
+.bubble th{background:var(--steel-light);padding:5px 9px;text-align:left;color:var(--chrome);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+.bubble td{padding:6px 9px;border-bottom:1px solid var(--border)}
+.c-hi{color:var(--green);font-weight:700}
+.c-me{color:var(--yellow);font-weight:700}
+.c-lo{color:var(--orange);font-weight:700}
+.typing{display:flex;gap:4px;padding:14px}
+.typing span{width:6px;height:6px;background:var(--chrome);border-radius:50%;animation:bo .9s infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes bo{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+.input-area{margin-top:10px;background:var(--steel-card);border:1px solid var(--border);border-radius:10px;padding:13px}
+.irow{display:flex;gap:8px;align-items:flex-end}
+.irow textarea{flex:1;min-height:42px;max-height:100px;border:none;background:transparent;padding:3px 0;font-size:13px;resize:none;color:var(--white);font-family:inherit}
+.irow textarea:focus{outline:none;border:none}
+.hints{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px}
+.hint{background:var(--steel-light);border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;color:var(--chrome);cursor:pointer;transition:.15s}
+.hint:hover{border-color:var(--red);color:var(--white)}
+.attach-label{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--chrome);cursor:pointer;padding:4px 9px;border:1px solid var(--border);border-radius:5px;transition:.15s;margin-top:8px}
+.attach-label:hover{border-color:var(--red);color:var(--white)}
+
+/* KB */
+.kb-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.drop-zone{border:2px dashed var(--border);border-radius:10px;padding:28px 18px;text-align:center;cursor:pointer;transition:.2s;background:var(--steel-mid)}
+.drop-zone:hover,.drop-zone.drag{border-color:var(--red);background:var(--red-glow)}
+.drop-zone .dz-icon{font-size:32px;margin-bottom:10px;opacity:.4}
+.drop-zone p{color:var(--chrome);font-size:13px;line-height:1.6}
+.drop-zone strong{color:var(--white)}
+.fitem{background:var(--steel-mid);border:1px solid var(--border);border-radius:var(--radius);padding:11px 13px;display:flex;align-items:flex-start;gap:10px;margin-bottom:7px}
+.fi-body{flex:1;min-width:0}
+.fi-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fi-meta{font-size:11px;color:var(--chrome);margin-top:2px}
+.fi-summ{font-size:11px;color:var(--dim);margin-top:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.prog{height:3px;background:var(--steel-light);border-radius:2px;margin-top:6px;overflow:hidden}
+.pfill{height:100%;background:var(--red);border-radius:2px;transition:width .3s}
+
+/* CONTEXTO */
+.ctx-item{display:flex;align-items:center;gap:9px;background:var(--steel-mid);border:1px solid var(--border);border-radius:var(--radius);padding:9px 12px;font-size:12px;transition:.15s}
+.ctx-item.lit{border-color:rgba(46,204,113,.3);background:var(--green-bg)}
+.ctx-dot{width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0}
+.ctx-dot.ok{background:var(--green)}
+
+/* BOM */
+.bom-table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--steel-light);padding:9px 13px;text-align:left;font-size:10px;font-weight:700;letter-spacing:.8px;color:var(--chrome);text-transform:uppercase;border-bottom:2px solid var(--border)}
+td{padding:11px 13px;border-bottom:1px solid var(--border);vertical-align:middle}
+tr:hover td{background:rgba(255,255,255,.02)}
+td input[type=number]{width:58px;padding:4px 8px;background:var(--steel-mid);border:1px solid var(--border);color:var(--white);border-radius:4px;font-size:13px;text-align:center}
+
+/* HIST */
+.hist-item{background:var(--steel-card);border:1px solid var(--border);border-radius:10px;padding:14px 18px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.hist-item:hover{border-color:var(--red)}
+.hist-codes{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:13px}
+.h-arrow{color:var(--red);font-size:18px}
+
+/* MISC */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.mono{font-family:var(--mono);font-size:13px}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.ph{font-size:20px;font-weight:800;margin-bottom:5px}
+.ps{font-size:13px;color:var(--chrome);margin-bottom:22px}
+.empty{text-align:center;padding:50px 20px;color:var(--chrome)}
+.tag{background:var(--steel-light);color:var(--chrome-light);font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;display:inline-block;margin:2px}
+.chip{display:inline-block;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;background:var(--steel-light);color:var(--chrome-light)}
+.chip.parker{background:rgba(204,0,0,.2);color:#FF6666}
+.chip.sun{background:rgba(245,166,35,.15);color:var(--yellow)}
+.chip.eaton{background:rgba(39,174,96,.15);color:#4CAF88}
+.chip.bosch{background:rgba(100,149,237,.15);color:#7EB8FF}
+
+/* TABS dentro da página */
+.tabs{display:flex;gap:4px;margin-bottom:24px;border-bottom:1px solid var(--border);padding-bottom:0}
+.tab{padding:10px 18px;font-size:13px;font-weight:600;color:var(--chrome);cursor:pointer;border:none;background:transparent;border-bottom:3px solid transparent;transition:.15s;margin-bottom:-1px}
+.tab:hover{color:var(--white)}
+.tab.active{color:var(--white);border-bottom-color:var(--red)}
+.tab-content{display:none}
+.tab-content.active{display:block}
+
+/* TOASTS */
+.toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:7px}
+.toast{background:var(--steel-card);border:1px solid var(--border);border-left:4px solid var(--green);border-radius:var(--radius);padding:11px 16px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:ti .2s ease;max-width:280px}
+.toast.err{border-left-color:var(--red)}
+@keyframes ti{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-thumb{background:var(--steel-light);border-radius:3px}
+
+@media(max-width:900px){
+  .config-grid,.agent-grid,.kb-grid,.stats-bar,.result-meta,.g2{grid-template-columns:1fr}
+  .sidebar{width:56px}
+  .nav-btn span,.nav-lbl,.sb-footer{display:none}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">RX</div>
+    <div>
+      <span class="logo-name">Rexroth Crossover</span>
+      <span class="logo-sub">Fluipress Automação</span>
+    </div>
+  </div>
+  <div class="api-pill" onclick="goTo('config')" id="apiPill">
+    <div class="dot" id="apiDot"></div>
+    <span id="apiTxt">API não configurada</span>
+  </div>
+</header>
+
+<div class="app">
+<nav class="sidebar">
+  <div class="nav-lbl">Principal</div>
+  <button class="nav-btn active" onclick="goTo('configurador')" id="nav-configurador">
+    <span class="nav-icon">⚙️</span><span>Configurador</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('agente')" id="nav-agente">
+    <span class="nav-icon">🤖</span><span>Agente IA</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('kb')" id="nav-kb">
+    <span class="nav-icon">📚</span><span>Base de Catálogos</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('bom')" id="nav-bom">
+    <span class="nav-icon">📋</span><span>BOM / Cotação</span>
+  </button>
+  <button class="nav-btn" onclick="goTo('historico')" id="nav-historico">
+    <span class="nav-icon">🕐</span><span>Histórico</span>
+  </button>
+  <div class="nav-sep"></div>
+  <div class="nav-lbl">Sistema</div>
+  <button class="nav-btn" onclick="goTo('config')" id="nav-config">
+    <span class="nav-icon">⚙️</span><span>Configurações</span>
+  </button>
+  <div class="sb-footer">
+    <div class="sb-stat"><strong id="sb-conv">0</strong>conversões</div>
+    <div class="sb-stat"><strong id="sb-cat">0</strong>catálogos</div>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ══════════════ CONFIGURADOR ══════════════ -->
+<div class="page active" id="page-configurador">
+  <div class="stats-bar" id="statsBar"></div>
+
+  <div class="config-grid">
+    <!-- ESQUERDA: entradas -->
+    <div>
+      <!-- PASSO 1 -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Origem <span class="badge bg-red">Passo 1</span></div>
+        <div class="field">
+          <label>Fabricante de Origem</label>
+          <select id="sel-fab" onchange="onFab()">
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Família de Produto</label>
+          <select id="sel-fam" onchange="onFam()" disabled>
+            <option value="">— Selecione —</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Código de Origem</label>
+          <input type="text" id="inp-cod" placeholder="Ex: D3W001ENJ---" oninput="onCodInput()" autocomplete="off" spellcheck="false">
+          <div style="font-size:11px;color:var(--chrome);margin-top:5px">Digite ou configure os parâmetros abaixo</div>
+        </div>
+      </div>
+
+      <!-- PASSO 2: parâmetros guiados -->
+      <div class="card" id="params-card" style="display:none;margin-bottom:16px">
+        <div class="card-title">Parâmetros <span class="badge bg-red">Passo 2</span></div>
+        <div id="params-container"></div>
+        <hr class="divider">
+        <div class="field">
+          <label>Código Montado</label>
+          <div class="generated-code" id="cod-montado">—</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:12px">
+          <button class="btn btn-red btn-full" onclick="buscar()">🔍 Buscar Equivalente Rexroth</button>
+        </div>
+        <div style="margin-top:10px">
+          <button class="btn btn-ghost btn-full btn-sm" onclick="buscarComIA()">🤖 Analisar com IA (catálogos)</button>
+        </div>
+      </div>
+
+      <!-- Busca direta -->
+      <div class="card">
+        <div class="card-title">Busca Direta</div>
+        <div class="field">
+          <input type="text" id="inp-busca" placeholder="Código, fabricante, família, tag…" oninput="buscaDireta()">
+        </div>
+        <div id="busca-results"></div>
+      </div>
+    </div>
+
+    <!-- DIREITA: resultado -->
+    <div>
+      <div class="card">
+        <div class="card-title">Equivalente Rexroth <span class="badge bg-chrome" id="res-badge">Aguardando</span></div>
+
+        <div class="result-empty" id="res-empty">
+          <div class="ei">🔄</div>
+          <p>Preencha os parâmetros à esquerda<br>para ver o equivalente Rexroth</p>
+        </div>
+
+        <div class="result-card" id="res-card">
+          <div style="font-size:10px;color:var(--chrome);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px">Equivalente encontrado</div>
+          <div class="result-code" id="res-cod">—</div>
+          <div class="warn-box">⚠️ <span>Não é substituição 1:1. Compare performance e dimensões com o cliente antes de confirmar.</span></div>
+          <div class="result-meta">
+            <div class="meta-item"><div class="mk">Material Number</div><div class="mv" id="res-mat">—</div></div>
+            <div class="meta-item"><div class="mk">Família Rexroth</div><div class="mv" id="res-fam">—</div></div>
+            <div class="meta-item"><div class="mk">Datasheet</div><div class="mv" id="res-ds">—</div></div>
+            <div class="meta-item"><div class="mk">Origem</div><div class="mv" id="res-orig">—</div></div>
+          </div>
+          <div class="notes-box" id="res-notas" style="display:none"></div>
+          <div id="res-tags" style="margin-bottom:14px"></div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-red btn-sm" onclick="addBOM()">➕ Adicionar à BOM</button>
+            <button class="btn btn-mid btn-sm" onclick="copiarCod()">📋 Copiar Código</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirDS()">📄 Datasheet</button>
+          </div>
+        </div>
+
+        <div class="no-match" id="no-match">
+          <p style="color:var(--chrome);margin-bottom:12px">Nenhum equivalente encontrado na base.</p>
+          <button class="btn btn-ghost btn-sm" onclick="buscarComIA()">🤖 Tentar com Agente IA</button>
+        </div>
+      </div>
+
+      <!-- Alternativas -->
+      <div class="card" id="alt-card" style="display:none;margin-top:16px">
+        <div class="card-title">Outras opções</div>
+        <div id="alt-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ AGENTE IA ══════════════ -->
+<div class="page" id="page-agente">
+  <div class="ph">Agente de Conversão IA</div>
+  <div class="ps">O agente estuda os catálogos da base e sugere o equivalente Rexroth analisando vazão, tamanho, êmbolo, função, tensão e demais parâmetros técnicos.</div>
+
+  <div class="agent-grid">
+    <div class="chat-col">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;padding:14px;min-height:0">
+        <div class="chat-box" id="chatBox">
+          <div class="msg msg-a">
+            <div class="msg-av">🤖</div>
+            <div class="msg-body">
+              <div class="msg-who">Agente Rexroth</div>
+              <div class="bubble">Olá! Sou o agente de conversão hidráulica da <strong>Fluipress</strong>.<br><br>
+              Estudo os catálogos da base e analiso os parâmetros técnicos — <strong>vazão, tamanho (NG), êmbolo/carretel, função, tensão do solenóide, pressão máxima</strong> — para sugerir o equivalente Rexroth com justificativa técnica completa.<br><br>
+              💡 Faça upload dos catálogos na <strong>Base de Catálogos</strong> antes de pedir conversões. Use os atalhos abaixo para começar.</div>
+            </div>
+          </div>
+        </div>
+        <div class="hints" id="chatHints">
+          <div class="hint" onclick="useHint(this)">Converter Vickers DG4V-3-2A 24VDC NG10</div>
+          <div class="hint" onclick="useHint(this)">Parker D3W 001E 24VDC → Rexroth</div>
+          <div class="hint" onclick="useHint(this)">Sun CKGB T-17A 240 L/min → Rexroth</div>
+          <div class="hint" onclick="useHint(this)">Parker PV023 → Rexroth A10V 18cc</div>
+          <div class="hint" onclick="useHint(this)">Limitadora Parker RD102 350 bar → Rexroth</div>
+        </div>
+        <div class="input-area">
+          <div class="irow">
+            <textarea id="chatIn" placeholder="Descreva: fabricante, código, pressão (bar), vazão (L/min), tensão (V), NG, tipo de êmbolo/carretel, função…" rows="2"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"></textarea>
+            <button class="btn btn-red" onclick="sendMsg()" id="sendBtn" style="padding:10px 16px">↑</button>
+          </div>
+          <label class="attach-label">
+            📎 Anexar catálogo (PDF)
+            <input type="file" accept=".pdf" style="display:none" onchange="attachPDF(this)">
+          </label>
+          <span id="attachName" style="font-size:11px;color:var(--chrome);margin-left:8px"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Painel direito agente -->
+    <div style="display:flex;flex-direction:column;gap:14px;overflow-y:auto">
+      <div class="card card-sm">
+        <div class="card-title">Contexto do Agente</div>
+        <div style="display:flex;flex-direction:column;gap:7px">
+          <div class="ctx-item" id="ctx-rex"><div class="ctx-dot" id="cd-rex"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">Catálogos Rexroth</div><div style="font-size:11px;color:var(--chrome)" id="ct-rex">0 documentos</div></div></div>
+          <div class="ctx-item" id="ctx-orig"><div class="ctx-dot" id="cd-orig"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">Outros Fabricantes</div><div style="font-size:11px;color:var(--chrome)" id="ct-orig">0 documentos</div></div></div>
+          <div class="ctx-item" id="ctx-att"><div class="ctx-dot" id="cd-att"></div><div style="flex:1"><div style="font-size:12px;font-weight:600">PDF Anexado</div><div style="font-size:11px;color:var(--chrome)" id="ct-att">Nenhum</div></div></div>
+        </div>
+        <button class="btn btn-ghost btn-sm btn-full" style="margin-top:10px" onclick="goTo('kb')">+ Adicionar catálogos</button>
+      </div>
+
+      <div class="card card-sm" id="ai-res-card" style="display:none">
+        <div class="card-title">Último Resultado IA <span id="ai-res-badge"></span></div>
+        <div id="ai-res-body"></div>
+        <div style="display:flex;gap:7px;margin-top:10px">
+          <button class="btn btn-red btn-sm" onclick="addLastBOM()">+ BOM</button>
+          <button class="btn btn-ghost btn-sm" onclick="copyLast()">📋 Copiar</button>
+        </div>
+      </div>
+
+      <div class="card card-sm">
+        <div class="card-title">O agente analisa</div>
+        <div style="font-size:12px;color:var(--chrome);line-height:1.85">
+          📐 <strong style="color:var(--white)">Tamanho / NG</strong> — frame size, cavidade<br>
+          💧 <strong style="color:var(--white)">Vazão</strong> — L/min nominal e máxima<br>
+          🔩 <strong style="color:var(--white)">Êmbolo / Carretel</strong> — tipo de centro<br>
+          ⚡ <strong style="color:var(--white)">Tensão</strong> — solenóide AC/DC<br>
+          🔧 <strong style="color:var(--white)">Função</strong> — direcional, retenção, alívio…<br>
+          📊 <strong style="color:var(--white)">Pressão</strong> — máxima de operação<br>
+          🔗 <strong style="color:var(--white)">Conexão</strong> — flange, roscada, cartucho
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ BASE DE CATÁLOGOS ══════════════ -->
+<div class="page" id="page-kb">
+  <div class="ph">Base de Catálogos</div>
+  <div class="ps">PDFs indexados pelo agente. Quanto mais completa a base, mais precisa a conversão.</div>
+  <div class="kb-grid">
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.7px;color:var(--chrome);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        📘 Catálogos Rexroth <span style="background:var(--red);color:#fff;font-size:10px;padding:2px 7px;border-radius:20px" id="rc">0</span>
+      </div>
+      <div class="drop-zone" onclick="document.getElementById('fr').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="dropFile(event,'rexroth')">
+        <input type="file" id="fr" accept=".pdf" multiple onchange="upFiles(this.files,'rexroth')" style="display:none">
+        <div class="dz-icon">📄</div>
+        <p><strong>Arraste PDFs ou clique</strong><br>Datasheets RE, catálogos Rexroth</p>
+      </div>
+      <div id="rex-list" style="margin-top:10px"></div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;letter-spacing:.7px;color:var(--chrome);text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:8px">
+        📗 Outros Fabricantes <span style="background:var(--red);color:#fff;font-size:10px;padding:2px 7px;border-radius:20px" id="oc">0</span>
+      </div>
+      <select id="fab-sel" style="margin-bottom:8px">
+        <option value="Parker">Parker</option>
+        <option value="Sun Hydraulics">Sun Hydraulics</option>
+        <option value="Eaton / Vickers">Eaton / Vickers</option>
+        <option value="Bosch">Bosch</option>
+        <option value="Atos">Atos</option>
+        <option value="Yuken">Yuken</option>
+        <option value="Outro">Outro</option>
+      </select>
+      <div class="drop-zone" onclick="document.getElementById('fo').click()"
+        ondragover="event.preventDefault();this.classList.add('drag')"
+        ondragleave="this.classList.remove('drag')"
+        ondrop="dropFile(event,'origem')">
+        <input type="file" id="fo" accept=".pdf" multiple onchange="upFiles(this.files,'origem')" style="display:none">
+        <div class="dz-icon">📄</div>
+        <p><strong>Arraste PDFs ou clique</strong><br>Parker, Vickers, Sun, Bosch…</p>
+      </div>
+      <div id="orig-list" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:20px">
+    <div class="card-title">Estatísticas</div>
+    <div id="kb-stats" class="g2"><div style="color:var(--chrome);font-size:13px">Nenhum documento ainda.</div></div>
+  </div>
+</div>
+
+<!-- ══════════════ BOM ══════════════ -->
+<div class="page" id="page-bom">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+    <div><div class="ph">BOM / Cotação</div><div class="ps" style="margin:0">Lista de itens convertidos</div></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" onclick="limparBOM()">🗑️ Limpar</button>
+      <button class="btn btn-mid btn-sm" onclick="exportCSV()">📥 CSV</button>
+      <button class="btn btn-red btn-sm" onclick="copiarLista()">📋 Copiar Lista</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="empty" id="bom-empty"><div style="font-size:48px;opacity:.25;margin-bottom:14px">📋</div><p>Nenhum item. Adicione pelo configurador ou agente IA.</p></div>
+    <div class="bom-table-wrap" id="bom-table" style="display:none">
+      <table>
+        <thead><tr><th>Qtd</th><th>Fabricante</th><th>Código Origem</th><th>→</th><th>Código Rexroth</th><th>Material Nº</th><th>Família</th><th></th></tr></thead>
+        <tbody id="bom-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ HISTÓRICO ══════════════ -->
+<div class="page" id="page-historico">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:22px">
+    <div><div class="ph">Histórico</div><div class="ps" style="margin:0">Conversões desta sessão</div></div>
+    <button class="btn btn-ghost btn-sm" onclick="limparHist()">🗑️ Limpar</button>
+  </div>
+  <div id="hist-list"><div class="empty"><div style="font-size:48px;opacity:.2;margin-bottom:14px">🕐</div><p>Nenhuma conversão ainda.</p></div></div>
+</div>
+
+<!-- ══════════════ CONFIG ══════════════ -->
+<div class="page" id="page-config">
+  <div class="ph">Configurações</div>
+  <div class="ps">API e preferências do sistema</div>
+  <div style="max-width:480px;display:flex;flex-direction:column;gap:14px">
+    <div class="card">
+      <div class="card-title">Anthropic API Key</div>
+      <div class="field">
+        <label>API Key (para o Agente IA)</label>
+        <input type="password" id="keyIn" placeholder="sk-ant-api03-…" autocomplete="off">
+        <div style="font-size:11px;color:var(--chrome);margin-top:5px">Salva localmente. Necessária apenas para o Agente IA — o Configurador funciona sem ela.</div>
+      </div>
+      <button class="btn btn-red" onclick="saveKey()">💾 Salvar chave</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Base de Dados (Configurador)</div>
+      <button class="btn btn-ghost btn-sm" onclick="exportDB()">📥 Exportar conversões (JSON)</button>
+      <button class="btn btn-ghost btn-sm" style="margin-left:8px" onclick="document.getElementById('imp-db').click()">📤 Importar JSON</button>
+      <input type="file" id="imp-db" accept=".json" style="display:none" onchange="importDB(this)">
+    </div>
+    <div class="card">
+      <div class="card-title">Catálogos (Agente IA)</div>
+      <button class="btn btn-ghost btn-sm" onclick="exportKB()">📥 Exportar catálogos indexados</button>
+      <div class="divider"></div>
+      <button class="btn btn-del btn-sm" onclick="clearKB()">🗑️ Limpar catálogos</button>
+    </div>
+  </div>
+</div>
+
+</main>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script>
+// ══════════════════════════════════════════════════════
+// BASE DE CONVERSÕES (Configurador)
+// ══════════════════════════════════════════════════════
+let DB = [
+  {id:1,fabricante:"Parker",familia:"Direcional NG10",origem:"D3W001ENJ---",rexroth:"4WE10EA5X/EG24N9K4/M",material:"R901278775",datasheet:"23340",notas:"3 câmaras. Com fim de curso: usar 5 câmaras (R901402281).",tags:["solenóide","24VDC","NG10","3 câmaras"]},
+  {id:2,fabricante:"Parker",familia:"Direcional NG10",origem:"D3W001ENJ---5K",rexroth:"5-4WE10EA5X/EG24N9K4/M",material:"R901402281",datasheet:"23352",notas:"5 câmaras — necessário para fim de curso.",tags:["solenóide","24VDC","NG10","5 câmaras","fim de curso"]},
+  {id:3,fabricante:"Parker",familia:"Direcional NG10",origem:"D3W002HNJ---",rexroth:"4WE10HA5X/EG24N9K4/M",material:"R901300142",datasheet:"23340",notas:"Carretel H (centro fechado).",tags:["NG10","centro fechado","24VDC"]},
+  {id:4,fabricante:"Parker",familia:"Direcional NG10",origem:"D3W003LNJ---",rexroth:"4WE10LA5X/EG24N9K4/M",material:"R901300185",datasheet:"23340",tags:["NG10","24VDC"]},
+  {id:5,fabricante:"Parker",familia:"Direcional NG10",origem:"D3W004JNJ---",rexroth:"4WE10JA5X/EG24N9K4/M",material:"R901300241",datasheet:"23340",tags:["NG10","24VDC","tandem"]},
+  {id:6,fabricante:"Parker",familia:"Direcional NG6",origem:"D1VW001CNJW",rexroth:"4WE6EA5X/EG24N9K4",material:"R901070700",datasheet:"23178",notas:"Verificar versão com/sem solenóide duplo.",tags:["NG6","solenóide","24VDC"]},
+  {id:7,fabricante:"Parker",familia:"Direcional NG6",origem:"D1VW002HNJW",rexroth:"4WE6HA5X/EG24N9K4",material:"R901070782",datasheet:"23178",tags:["NG6","24VDC","centro fechado"]},
+  {id:8,fabricante:"Parker",familia:"Direcional Pilotado",origem:"D81VW001C1NJW3A91",rexroth:"H-4WEH25E6X/6EG24N9ES2K4/B10D3",material:"R900719057",datasheet:"24751",notas:"NG25. Verificar pressão de piloto e controle de óleo.",tags:["NG25","pilotado","24VDC","S2"]},
+  {id:9,fabricante:"Parker",familia:"Direcional Pilotado",origem:"D31DW001ENJW",rexroth:"H-4WEH10E4X/6EG24N9K4",material:"R900245872",datasheet:"24751",tags:["NG10","pilotado","24VDC"]},
+  {id:10,fabricante:"Parker",familia:"Direcional Pilotado",origem:"D41VW001ENJW",rexroth:"H-4WEH16E7X/6EG24N9K4",material:"R900246056",datasheet:"24751",tags:["NG16","pilotado","24VDC"]},
+  {id:11,fabricante:"Parker",familia:"Direcional Pilotado",origem:"D91VW001ENJW",rexroth:"H-4WEH25E6X/6EG24N9K4",material:"R900245101",datasheet:"24751",tags:["NG25","pilotado","24VDC"]},
+  {id:12,fabricante:"Parker",familia:"Direcional Pilotado",origem:"D111VW001ENJW",rexroth:"H-4WEH32E6X/6EG24N9K4",material:"R900712909",datasheet:"24751",tags:["NG32","pilotado","24VDC"]},
+  {id:13,fabricante:"Sun Hydraulics",familia:"Retenção Pilotada",origem:"CKGBXCN",rexroth:"Z2S6-1-6X/",material:"R900347484",datasheet:"23178",notas:"Cartucho T-17A, 240 L/min, 2 bar cracking. Confirmar cavidade e pressão de piloto.",tags:["T-17A","240 L/min","2 bar","cartucho","retenção pilotada"]},
+  {id:14,fabricante:"Sun Hydraulics",familia:"Retenção Pilotada",origem:"CKBBXCN",rexroth:"Z2S6-1-6X/",material:"R900347484",datasheet:"23178",notas:"T-163A, 30 L/min, 2 bar. Frame menor que o CKGB.",tags:["T-163A","30 L/min","2 bar","cartucho"]},
+  {id:15,fabricante:"Sun Hydraulics",familia:"Limitadora de Pressão",origem:"RRFAXAN",rexroth:"DBD-6-1X/315",material:"R900423133",datasheet:"23178",notas:"Válvula de alívio Sun frame F.",tags:["limitadora","315 bar","NG6"]},
+  {id:16,fabricante:"Eaton / Vickers",familia:"Direcional NG10",origem:"DG4V-3-2A-M-U-B5-60",rexroth:"4WE10A5X/EG24N9K4/M",material:"R901041270",datasheet:"23340",notas:"Eaton DG4V-3 equivale ao Rexroth 4WE10 série A.",tags:["Vickers","NG10","solenóide","24VDC"]},
+  {id:17,fabricante:"Eaton / Vickers",familia:"Direcional NG6",origem:"DG4V-2-8A-M-U-B5-60",rexroth:"4WE6A5X/EG24N9K4",material:"R901070660",datasheet:"23178",tags:["Vickers","NG6","solenóide"]},
+  {id:18,fabricante:"Eaton / Vickers",familia:"Limitadora de Pressão",origem:"DGMFN-3-Y-A2W-B2W-41",rexroth:"DBDS6G1X/400",material:"R900425917",datasheet:"23178",notas:"Limitadora pilotada Eaton.",tags:["limitadora","400 bar","pilotada"]},
+  {id:19,fabricante:"Bosch",familia:"Direcional NG10",origem:"0810091274",rexroth:"4WE10EA5X/EG24N9K4/M",material:"R901278775",datasheet:"23340",notas:"Bosch série 0810. Confirmar bobina e conector.",tags:["Bosch","NG10","24VDC"]},
+  {id:20,fabricante:"Bosch",familia:"Bomba Pistão",origem:"0513300240",rexroth:"A10VSO18DFR1/31R-PPA12N00",material:"R902502521",datasheet:"92050",notas:"Bomba axial variável. Confirmar regulagem e rotação.",tags:["bomba","axial","variável","18cc"]},
+  {id:21,fabricante:"Parker",familia:"Bomba Pistão",origem:"PV023R1K1T1NMMC",rexroth:"A10VSO18DFR1/31R-PPA12N00",material:"R902502521",datasheet:"92050",notas:"Parker PV023 ≈ Rexroth A10V 18cc. Confirmar cilindrada, pressão e flange SAE.",tags:["bomba","axial","variável","18cc","SAE"]},
+  {id:22,fabricante:"Parker",familia:"Bomba Pistão",origem:"PV046R1K1T1NMMC",rexroth:"A10VSO45DFR1/31R-PPA12N00",material:"R910945177",datasheet:"92050",tags:["bomba","axial","variável","45cc"]},
+  {id:23,fabricante:"Parker",familia:"Bomba Pistão",origem:"PV080R1K1T1NMMC",rexroth:"A10VSO71DFR1/31R-PPA12N00",material:"R910968979",datasheet:"92050",tags:["bomba","axial","variável","71cc"]},
+  {id:24,fabricante:"Parker",familia:"Limitadora de Pressão",origem:"RD102C20",rexroth:"DBDS10G1X/400",material:"R900425995",datasheet:"23178",notas:"Limitadora direta Parker RD102.",tags:["limitadora","400 bar","direta"]},
+  {id:25,fabricante:"Parker",familia:"Redutora de Pressão",origem:"PRH101C35",rexroth:"DR10-1-5X/315YM",material:"R900596907",datasheet:"23178",notas:"Redutora modular Parker. Confirmar faixa de ajuste.",tags:["redutora","315 bar","modular"]},
+];
+
+// Parâmetros guiados por família
+const PARAMS = {
+  "Direcional NG10":[
+    {id:"ventil",label:"Tipo de Válvula",opts:["D3W"]},
+    {id:"carretel",label:"Carretel / Êmbolo",hint:"Centro, bloqueio, tipo de passagem",opts:["001E=EA — Centro aberto","002H=H — Centro fechado","003L=L — Centro tandem","004J=J — Centro flutuante","005X2=X2 — Especial","006M=M — Motor","007P=P — Centro pressurizado","009G=G — Regenerativo","011Q=Q — Alta pressão","014F=F — Freio"]},
+    {id:"vedacao",label:"Vedação",opts:["N=NBR (Padrão)","V=Viton/FKM"]},
+    {id:"solenoide",label:"Solenóide / Tensão",opts:["J=24 VDC","K=12 VDC","N=220 VAC","P=110 VAC","G=96 VDC","U=48 VDC"]},
+    {id:"override",label:"Override Manual",opts:["-=Sem override","T=Com override manual"]},
+    {id:"conector",label:"Conector Elétrico",opts:["W=DIN 43650 (Padrão)","J=Junior Timer"]},
+    {id:"acessorios",label:"Acessórios",opts:["---=Sem","3A=S2 (travas)","3B=S (travas simples)","3D=12","3E=11","3F=10"]},
+  ],
+  "Direcional NG6":[
+    {id:"ventil",label:"Tipo de Válvula",opts:["D1VW"]},
+    {id:"carretel",label:"Carretel / Êmbolo",opts:["001C=EA — Centro aberto","002H=H — Centro fechado","003L=L — Centro tandem","004J=J — Centro flutuante","006M=M — Motor","007P=P — Centro pressurizado"]},
+    {id:"vedacao",label:"Vedação",opts:["N=NBR","V=Viton"]},
+    {id:"solenoide",label:"Solenóide / Tensão",opts:["J=24 VDC","K=12 VDC","N=220 VAC","P=110 VAC"]},
+    {id:"conector",label:"Conector",opts:["W=DIN 43650"]},
+  ],
+  "Direcional Pilotado":[
+    {id:"ventil",label:"Tamanho / Família",hint:"NG define a vazão máxima",opts:["D31DW=NG10 padrão (80 L/min)","D31NW=NG10 alta vazão","D41VW=NG16 (250 L/min)","D81VW=NG25 — 22cc (350 L/min)","D91VW=NG25 — 25cc (400 L/min)","D111VW=NG32 (600 L/min)"]},
+    {id:"carretel",label:"Carretel / Êmbolo",opts:["001C=EA — Centro aberto","002C=H — Centro fechado","003C=L — Tandem","004C=J — Flutuante","006C=M — Motor","007C=P — Centro pressurizado","009C=G — Regenerativo","011C=Q — Alta pressão"]},
+    {id:"solenoide",label:"Solenóide / Tensão",opts:["J=24 VDC","N=220 VAC","P=110 VAC","K=12 VDC"]},
+    {id:"override",label:"Override Manual",opts:["-=Sem","T=Com override"]},
+    {id:"conector",label:"Conector",opts:["W=DIN 43650"]},
+  ],
+  "Retenção Pilotada":[
+    {id:"frame",label:"Frame Size / Vazão",opts:["CKBB=Frame B (30 L/min, T-163A)","CKGB=Frame G (240 L/min, T-17A)","CKNB=Frame N (120 L/min)"]},
+    {id:"piloto",label:"Tipo de Piloto",opts:["X=Não vedado (padrão)","Y=Vedado (sem purga de ar)"]},
+    {id:"cracking",label:"Pressão de Abertura",opts:["C=2 bar (30 psi)","D=7 bar (100 psi)","V=0.5 bar (7 psi)"]},
+    {id:"vedacao",label:"Vedações",opts:["N=Buna-N / NBR","V=Viton / FKM"]},
+  ],
+  "Limitadora de Pressão":[
+    {id:"tipo",label:"Tipo",opts:["RD102=Direta (NG10)","RDBA=Pilotada (NG6)","RVBAIC=Cartucho"]},
+    {id:"pressao",label:"Pressão Máxima",opts:["C20=200 bar","C35=350 bar","C40=400 bar","C25=250 bar"]},
+    {id:"vedacao",label:"Vedação",opts:["N=NBR","V=Viton"]},
+  ],
+  "Bomba Pistão":[
+    {id:"serie",label:"Série / Cilindrada",opts:["PV023=18 cc/rot","PV046=45 cc/rot","PV080=71 cc/rot","PV140=140 cc/rot","PV180=180 cc/rot"]},
+    {id:"regulagem",label:"Regulagem",opts:["R1K1=Pressão compensada","R1L=Pressão+Fluxo","R1D=Controle remoto"]},
+    {id:"flange",label:"Flange / Acoplamento",opts:["T1=SAE 2 furos","NMMC=SAE 4 furos","B5=DIN 5"]},
+    {id:"vedacao",label:"Vedação / Fluido",opts:["N=Mineral/NBR","V=HF/Viton"]},
+  ],
+};
+
+// ── State ──
+let currentResult = null;
+let BOM = [];
+let HIST = [];
+let KB = {rexroth:[], origem:[]};
+let attachedPDF = null;
+let lastAIResult = null;
+
+// ── Fabricantes/famílias dinâmicos ──
+function getFabs(){ return [...new Set(DB.map(d=>d.fabricante))]; }
+function getFams(fab){ return [...new Set(DB.filter(d=>d.fabricante===fab).map(d=>d.familia))]; }
+
+// ══════════════════════════════════════════════════════
+// NAVEGAÇÃO
+// ══════════════════════════════════════════════════════
+function goTo(p) {
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.getElementById('nav-'+p).classList.add('active');
+  if(p==='configurador'){renderStats();initSelects();}
+  if(p==='bom') renderBOM();
+  if(p==='historico') renderHist();
+  if(p==='kb'){renderKB();renderKBStats();}
+  updateCtx(); updateSB();
+}
+
+// ══════════════════════════════════════════════════════
+// STATS
+// ══════════════════════════════════════════════════════
+function renderStats(){
+  const fabs=[...new Set(DB.map(d=>d.fabricante))].length;
+  const fams=[...new Set(DB.map(d=>d.familia))].length;
+  document.getElementById('statsBar').innerHTML=`
+    <div class="stat-item"><div class="stat-n">${DB.length}</div><div class="stat-l">Conversões na Base</div></div>
+    <div class="stat-item"><div class="stat-n">${fabs}</div><div class="stat-l">Fabricantes Mapeados</div></div>
+    <div class="stat-item"><div class="stat-n">${fams}</div><div class="stat-l">Famílias de Produto</div></div>
+    <div class="stat-item"><div class="stat-n">${HIST.length}</div><div class="stat-l">Conversões nesta Sessão</div></div>`;
+}
+
+// ══════════════════════════════════════════════════════
+// CONFIGURADOR — SELECTS
+// ══════════════════════════════════════════════════════
+function initSelects(){
+  const s=document.getElementById('sel-fab');
+  const cur=s.value;
+  s.innerHTML='<option value="">— Selecione —</option>';
+  getFabs().forEach(f=>{ s.innerHTML+=`<option value="${f}"${f===cur?' selected':''}>${f}</option>`; });
+}
+
+function onFab(){
+  const fab=document.getElementById('sel-fab').value;
+  const sf=document.getElementById('sel-fam');
+  sf.innerHTML='<option value="">— Selecione —</option>';
+  sf.disabled=!fab;
+  if(fab) getFams(fab).forEach(f=>{ sf.innerHTML+=`<option value="${f}">${f}</option>`; });
+  document.getElementById('params-card').style.display='none';
+  resetResult();
+}
+
+function onFam(){
+  const fam=document.getElementById('sel-fam').value;
+  if(PARAMS[fam]){ renderParams(fam); document.getElementById('params-card').style.display='block'; }
+  else document.getElementById('params-card').style.display='none';
+  resetResult();
+}
+
+function renderParams(fam){
+  const c=document.getElementById('params-container');
+  c.innerHTML='';
+  (PARAMS[fam]||[]).forEach(p=>{
+    const opts=p.opts.map(o=>{
+      const [v,...rest]=o.split('=');
+      return `<option value="${v.trim()}">${o}</option>`;
+    }).join('');
+    c.innerHTML+=`<div class="field">
+      <label>${p.label}${p.hint?` <span style="font-size:10px;color:var(--chrome);font-weight:400;text-transform:none">(${p.hint})</span>`:''}</label>
+      <select id="param-${p.id}" onchange="montarCod()"><option value="">—</option>${opts}</select>
+    </div>`;
+  });
+}
+
+function montarCod(){
+  const fam=document.getElementById('sel-fam').value;
+  if(!PARAMS[fam]) return;
+  const partes=PARAMS[fam].map(p=>{ const el=document.getElementById('param-'+p.id); return el?(el.value||'?'):'?'; });
+  const cod=partes.join('');
+  document.getElementById('cod-montado').textContent=cod;
+  document.getElementById('inp-cod').value=cod;
+}
+
+function onCodInput(){
+  document.getElementById('cod-montado').textContent=document.getElementById('inp-cod').value||'—';
+}
+
+// ══════════════════════════════════════════════════════
+// BUSCA
+// ══════════════════════════════════════════════════════
+function buscar(){
+  const cod=document.getElementById('inp-cod').value.trim().toUpperCase();
+  if(!cod){ toast('Digite um código de origem','err'); return; }
+  processar(cod);
+}
+
+function processar(cod){
+  let match=DB.find(d=>d.origem.toUpperCase()===cod);
+  let alts=[];
+  if(!match){
+    alts=DB.filter(d=>d.origem.toUpperCase().includes(cod)||cod.includes(d.origem.toUpperCase().slice(0,6))).slice(0,5);
+    if(alts.length) match=alts[0];
+  } else {
+    const fab=document.getElementById('sel-fab').value;
+    const fam=document.getElementById('sel-fam').value;
+    alts=DB.filter(d=>d.id!==match.id&&d.fabricante===(fab||match.fabricante)&&d.familia===(fam||match.familia)).slice(0,3);
+  }
+  if(match){ showResult(match); currentResult=match; if(alts.length>1) showAlts(alts.filter(a=>a.id!==match.id)); addHist(match,cod); renderStats(); }
+  else { mostrarNoMatch(); currentResult=null; }
+}
+
+function buscaDireta(){
+  const q=document.getElementById('inp-busca').value.trim().toLowerCase();
+  const el=document.getElementById('busca-results');
+  if(!q||q.length<2){ el.innerHTML=''; return; }
+  const res=DB.filter(d=>
+    d.origem.toLowerCase().includes(q)||d.rexroth.toLowerCase().includes(q)||
+    d.fabricante.toLowerCase().includes(q)||d.familia.toLowerCase().includes(q)||
+    (d.material||'').toLowerCase().includes(q)||(d.tags||[]).some(t=>t.toLowerCase().includes(q))
+  ).slice(0,7);
+  if(!res.length){ el.innerHTML=`<p style="font-size:12px;color:var(--chrome);padding:8px">Nenhum resultado para "${q}"</p>`; return; }
+  el.innerHTML=res.map(item=>`
+    <div style="background:var(--steel-mid);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:6px;cursor:pointer;transition:.15s" onclick="usarDireto(${item.id})" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px"><span class="chip ${chipCls(item.fabricante)}">${item.fabricante}</span><span style="font-size:11px;color:var(--chrome)">${item.familia}</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px"><span style="color:var(--chrome-light)">${item.origem}</span><span style="color:var(--red)">→</span><span style="color:#FF6666;font-weight:600">${item.rexroth}</span></div>
+    </div>`).join('');
+}
+
+function usarDireto(id){
+  const item=DB.find(d=>d.id===id); if(!item) return;
+  showResult(item); currentResult=item;
+  document.getElementById('inp-cod').value=item.origem;
+  document.getElementById('inp-busca').value='';
+  document.getElementById('busca-results').innerHTML='';
+  addHist(item,item.origem); renderStats();
+}
+
+function showResult(item){
+  document.getElementById('res-empty').style.display='none';
+  document.getElementById('no-match').classList.remove('visible');
+  const card=document.getElementById('res-card');
+  card.classList.add('visible');
+  document.getElementById('res-cod').textContent=item.rexroth;
+  document.getElementById('res-mat').textContent=item.material||'—';
+  document.getElementById('res-fam').textContent=item.familia;
+  document.getElementById('res-ds').innerHTML=item.datasheet?`<a href="https://www.boschrexroth.com/documents/12433/902611/re${item.datasheet}.pdf" target="_blank">RE ${item.datasheet} ↗</a>`:'—';
+  document.getElementById('res-orig').innerHTML=`<span class="chip ${chipCls(item.fabricante)}">${item.fabricante}</span>`;
+  const ne=document.getElementById('res-notas');
+  if(item.notas){ ne.textContent='📝 '+item.notas; ne.style.display='block'; } else ne.style.display='none';
+  document.getElementById('res-tags').innerHTML=(item.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('');
+  document.getElementById('res-badge').textContent='Encontrado';
+  document.getElementById('res-badge').className='badge bg-green';
+}
+
+function mostrarNoMatch(){
+  document.getElementById('res-empty').style.display='none';
+  document.getElementById('res-card').classList.remove('visible');
+  document.getElementById('no-match').classList.add('visible');
+  document.getElementById('res-badge').textContent='Não encontrado';
+  document.getElementById('res-badge').className='badge bg-yellow';
+}
+
+function resetResult(){
+  document.getElementById('res-empty').style.display='block';
+  document.getElementById('res-card').classList.remove('visible');
+  document.getElementById('no-match').classList.remove('visible');
+  document.getElementById('alt-card').style.display='none';
+  document.getElementById('res-badge').textContent='Aguardando';
+  document.getElementById('res-badge').className='badge bg-chrome';
+  currentResult=null;
+}
+
+function showAlts(lista){
+  if(!lista.length){ document.getElementById('alt-card').style.display='none'; return; }
+  document.getElementById('alt-card').style.display='block';
+  document.getElementById('alt-list').innerHTML=lista.map(item=>`
+    <div style="background:var(--steel-mid);border:1px solid var(--border);border-radius:var(--radius);padding:10px 13px;margin-bottom:7px;cursor:pointer;transition:.15s;display:flex;align-items:center;justify-content:space-between" onclick="showResult(${JSON.stringify(item).replace(/"/g,'&quot;')});currentResult=${item.id}" onmouseover="this.style.borderColor='var(--red)'" onmouseout="this.style.borderColor='var(--border)'">
+      <div><span class="chip ${chipCls(item.fabricante)}" style="margin-bottom:4px">${item.fabricante}</span><div style="font-family:var(--mono);font-size:12px;margin-top:4px">${item.origem} <span style="color:var(--red)">→</span> <span style="color:#FF6666">${item.rexroth}</span></div></div>
+      <span style="color:var(--chrome);font-size:18px">›</span>
+    </div>`).join('');
+}
+
+function buscarComIA(){
+  const cod=document.getElementById('inp-cod').value.trim();
+  const fab=document.getElementById('sel-fab').value;
+  const fam=document.getElementById('sel-fam').value;
+  let msg=`Converter para equivalente Rexroth: `;
+  if(fab) msg+=`Fabricante: ${fab}. `;
+  if(fam) msg+=`Família: ${fam}. `;
+  if(cod) msg+=`Código: ${cod}. `;
+  // Pega parâmetros selecionados
+  if(fam&&PARAMS[fam]){
+    const params=PARAMS[fam].map(p=>{
+      const el=document.getElementById('param-'+p.id);
+      if(el&&el.value) return `${p.label}: ${el.options[el.selectedIndex].text}`;
+      return null;
+    }).filter(Boolean);
+    if(params.length) msg+='Parâmetros: '+params.join(', ')+'.';
+  }
+  goTo('agente');
+  setTimeout(()=>{ document.getElementById('chatIn').value=msg; sendMsg(); },300);
+}
+
+// ══════════════════════════════════════════════════════
+// AGENTE IA
+// ══════════════════════════════════════════════════════
+function getKey(){ return localStorage.getItem('rx-key')||''; }
+
+function useHint(el){ document.getElementById('chatIn').value=el.textContent; el.remove(); }
+
+function attachPDF(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{
+    attachedPDF={name:f.name,b64:e.target.result.split(',')[1]};
+    document.getElementById('attachName').textContent='📎 '+f.name;
+    document.getElementById('cd-att').className='ctx-dot ok';
+    document.getElementById('ct-att').textContent=f.name;
+    document.getElementById('ctx-att').classList.add('lit');
+    toast('"'+f.name+'" anexado');
+  };
+  r.readAsDataURL(f);
+}
+
+async function sendMsg(){
+  const inp=document.getElementById('chatIn');
+  const msg=inp.value.trim(); if(!msg) return;
+  if(!getKey()){ toast('Configure a API key em Configurações','err'); goTo('config'); return; }
+  inp.value='';
+  document.getElementById('sendBtn').disabled=true;
+  addMsg('u',msg);
+  const typ=addTyping();
+  try{
+    const resp=await callAgent(msg);
+    typ.remove();
+    addMsg('a',resp.texto);
+    if(resp.resultado){ lastAIResult=resp.resultado; showAIResult(resp.resultado); addHist(resp.resultado,msg,true); }
+  } catch(err){ typ.remove(); addMsg('a','⚠️ Erro: '+err.message+'. Verifique a API key em Configurações.'); }
+  document.getElementById('sendBtn').disabled=false;
+  inp.focus();
+}
+
+async function callAgent(pergunta){
+  const content=[];
+  KB.rexroth.filter(d=>d.b64&&d.status==='ok').slice(-3).forEach(d=>{
+    content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:d.b64},title:'Rexroth: '+d.name});
+  });
+  KB.origem.filter(d=>d.b64&&d.status==='ok').slice(-3).forEach(d=>{
+    content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:d.b64},title:d.fabricante+': '+d.name});
+  });
+  if(attachedPDF) content.push({type:'document',source:{type:'base64',media_type:'application/pdf',data:attachedPDF.b64},title:'Anexo: '+attachedPDF.name});
+  const resumos=[...KB.rexroth,...KB.origem].filter(d=>d.status==='ok'&&d.resumo&&!d.b64)
+    .map(d=>`[${d.fabricante}] ${d.name}: ${typeof d.resumo==='object'?JSON.stringify(d.resumo):d.resumo}`).join('\n');
+
+  const sys=`Você é especialista sênior em hidráulica industrial da Fluipress Automação, especializado em conversão de componentes para equivalentes Bosch Rexroth.
+
+Ao analisar uma conversão, SEMPRE considere e compare estes parâmetros técnicos:
+• TAMANHO / NG (frame size, cavidade de cartucho)
+• VAZÃO (L/min nominal e máxima)
+• ÊMBOLO / CARRETEL (tipo de centro: aberto, fechado, tandem, flutuante)
+• FUNÇÃO (direcional 4/3, 4/2, retenção pilotada, limitadora, redutora, bomba axial…)
+• TENSÃO DO SOLENÓIDE (24VDC, 110VAC, 220VAC, 12VDC…)
+• PRESSÃO MÁXIMA DE OPERAÇÃO (bar)
+• CONEXÃO (flange SAE, roscada BSPP/NPT, cartucho, modular)
+• VEDAÇÕES (NBR, Viton, material do fluido)
+
+Responda SEMPRE neste formato:
+
+**ANÁLISE DE CONVERSÃO**
+**Componente de Origem:** [fabricante + código]
+**Parâmetros identificados:**
+- Tamanho/NG: X
+- Vazão: X L/min
+- Êmbolo/Carretel: [tipo]
+- Função: [descrição]
+- Tensão: X VDC/VAC
+- Pressão máx: X bar
+
+**EQUIVALENTE REXROTH SUGERIDO**
+Código: \`[CÓDIGO REXROTH]\`
+Material Number: R9XXXXXXXXX
+Datasheet: RE XXXXX
+
+**TABELA COMPARATIVA**
+| Parâmetro | ${''} Origem | Rexroth | Status |
+|-----------|--------|---------|--------|
+| Tamanho/NG | X | X | ✅ OK |
+| Vazão máx | X L/min | X L/min | ✅ OK |
+| Êmbolo/Carretel | X | X | ✅ OK |
+| Tensão | X V | X V | ✅ OK |
+| Pressão máx | X bar | X bar | ✅ OK |
+
+**GRAU DE CONFIANÇA: ALTA / MÉDIA / BAIXA**
+Justificativa: [motivo do grau]
+
+**ALERTAS:**
+- ⚠️ [diferenças críticas que podem afetar a aplicação]
+
+**PRÓXIMOS PASSOS:** [o que validar antes de substituir]
+
+${resumos?'Base de catálogos indexados:\n'+resumos:''}
+
+REGRAS: Nunca invente Material Numbers. Se não souber, diga "verificar no catálogo Rexroth". Responda em Português do Brasil. Use unidades métricas (bar, L/min, mm). Sempre avise quando não é substituição 1:1.
+
+Ao final, adicione obrigatoriamente em uma linha:
+<RESULT>{"codigo":"","material":"","datasheet":"","fabricante_origem":"","codigo_origem":"","confianca":"ALTA","familia":""}</RESULT>`;
+
+  content.push({type:'text',text:pergunta});
+  const res=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-beta':'pdfs-2024-09-25'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2200,system:sys,messages:[{role:'user',content}]})
+  });
+  if(!res.ok){ const e=await res.json(); throw new Error(e.error?.message||'HTTP '+res.status); }
+  const data=await res.json();
+  const full=data.content?.[0]?.text||'';
+  let resultado=null;
+  const m=full.match(/<RESULT>([\s\S]*?)<\/RESULT>/);
+  if(m){ try{ resultado=JSON.parse(m[1]); }catch(e){} }
+  return{texto:full.replace(/<RESULT>[\s\S]*?<\/RESULT>/,'').trim(),resultado};
+}
+
+function addMsg(role,txt){
+  const el=document.createElement('div');
+  el.className='msg msg-'+role;
+  el.innerHTML=`<div class="msg-av">${role==='a'?'🤖':'👤'}</div>
+    <div class="msg-body"><div class="msg-who">${role==='a'?'Agente Rexroth':'Você'}</div>
+    <div class="bubble">${fmtTxt(txt)}</div></div>`;
+  const box=document.getElementById('chatBox');
+  box.appendChild(el); el.scrollIntoView({behavior:'smooth',block:'end'}); return el;
+}
+
+function addTyping(){
+  const el=document.createElement('div');
+  el.className='msg msg-a';
+  el.innerHTML=`<div class="msg-av">🤖</div><div class="msg-body"><div class="msg-who">Agente Rexroth</div><div class="bubble"><div class="typing"><span></span><span></span><span></span></div></div></div>`;
+  document.getElementById('chatBox').appendChild(el);
+  el.scrollIntoView({behavior:'smooth',block:'end'}); return el;
+}
+
+function fmtTxt(t){
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`([^`\n]+)`/g,'<code>$1</code>')
+    .replace(/ALTA/g,'<span class="c-hi">ALTA</span>')
+    .replace(/MÉDIA/g,'<span class="c-me">MÉDIA</span>')
+    .replace(/BAIXA/g,'<span class="c-lo">BAIXA</span>')
+    .replace(/\n/g,'<br>');
+}
+
+function showAIResult(r){
+  if(!r?.codigo) return;
+  const cc=r.confianca==='ALTA'?'bg-green':r.confianca==='MÉDIA'?'bg-yellow':'bg-orange';
+  document.getElementById('ai-res-badge').innerHTML=`<span class="badge ${cc}">${r.confianca||'?'}</span>`;
+  document.getElementById('ai-res-body').innerHTML=`
+    <div style="font-size:10px;color:var(--chrome);margin-bottom:3px">Equivalente Rexroth</div>
+    <div class="mono" style="font-size:15px;font-weight:700;color:var(--white);margin-bottom:5px">${r.codigo}</div>
+    ${r.material?`<div style="font-size:12px;color:var(--chrome);margin-bottom:5px">${r.material}</div>`:''}
+    ${r.fabricante_origem?`<span class="tag">${r.fabricante_origem}</span> → <span class="tag">Rexroth</span>`:''}`;
+  document.getElementById('ai-res-card').style.display='block';
+}
+
+function addLastBOM(){ if(!lastAIResult) return; BOM.push({...lastAIResult,qty:1,ts:new Date().toLocaleString('pt-BR'),fromIA:true}); toast('Adicionado à BOM!'); }
+function copyLast(){ if(!lastAIResult?.codigo) return; navigator.clipboard.writeText(lastAIResult.codigo).then(()=>toast('Copiado!')); }
+
+// ══════════════════════════════════════════════════════
+// BASE DE CATÁLOGOS
+// ══════════════════════════════════════════════════════
+function dropFile(e,tipo){ e.preventDefault(); e.currentTarget.classList.remove('drag'); upFiles(e.dataTransfer.files,tipo); }
+
+function upFiles(flist,tipo){
+  [...flist].forEach(f=>{
+    if(f.type!=='application/pdf'){ toast(f.name+' não é PDF','err'); return; }
+    const fab=tipo==='rexroth'?'Rexroth':document.getElementById('fab-sel').value;
+    uploadFile(f,tipo,fab);
+  });
+}
+
+function uploadFile(file,tipo,fab){
+  const entry={id:Date.now()+Math.random(),name:file.name,fabricante:fab,tipo,
+    size:fmtSz(file.size),date:new Date().toLocaleDateString('pt-BR'),status:'loading',b64:null,resumo:null};
+  KB[tipo==='rexroth'?'rexroth':'origem'].push(entry);
+  renderKB();
+  const r=new FileReader();
+  r.onload=async e=>{
+    entry.b64=e.target.result.split(',')[1]; entry.status='indexing'; renderKB();
+    if(getKey()){
+      try{
+        const res=await fetch('https://api.anthropic.com/v1/messages',{
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-beta':'pdfs-2024-09-25'},
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:[
+            {type:'document',source:{type:'base64',media_type:'application/pdf',data:entry.b64}},
+            {type:'text',text:'Analise este catálogo hidráulico. Responda APENAS JSON sem markdown:\n{"fabricante":"","familia":"","tipo":"","modelos":[],"pressao_max":"","vazao_max":"","tamanhos":[],"tensoes":[],"resumo":"1 frase técnica"}'}
+          ]}]})
+        });
+        const d=await res.json();
+        const txt=d.content?.[0]?.text||'{}';
+        try{ entry.resumo=JSON.parse(txt.replace(/```[^`]*```/g,'').trim()); }
+        catch{ entry.resumo=txt.slice(0,150); }
+      } catch{ entry.resumo=fab+' — '+file.name; }
+    } else { entry.resumo=fab+' — '+file.name+' (configure API para extração automática)'; }
+    entry.status='ok';
+    saveKB(); renderKB(); renderKBStats(); updateSB(); updateCtx();
+    toast('📄 "'+file.name+'" indexado!');
+  };
+  r.readAsDataURL(file);
+}
+
+function renderKB(){ renderSec('rexroth','rex-list','rc'); renderSec('origem','orig-list','oc'); }
+
+function renderSec(tipo,lid,cid){
+  const docs=KB[tipo];
+  document.getElementById(cid).textContent=docs.length;
+  const el=document.getElementById(lid);
+  if(!docs.length){ el.innerHTML=''; return; }
+  el.innerHTML=docs.map((d,i)=>{
+    const si=d.status==='loading'?'⏳':d.status==='indexing'?'🔍':'✅';
+    const sc=d.status==='ok'?'var(--green)':'var(--yellow)';
+    let sum='';
+    if(d.resumo) sum=typeof d.resumo==='object'?(d.resumo.resumo||JSON.stringify(d.resumo).slice(0,90)+'…'):String(d.resumo).slice(0,90)+'…';
+    const prog=d.status==='loading'?25:d.status==='indexing'?65:100;
+    return `<div class="fitem"><div style="font-size:22px;flex-shrink:0">📄</div>
+      <div class="fi-body">
+        <div class="fi-name">${d.name}</div>
+        <div class="fi-meta"><span class="tag">${d.fabricante}</span> ${d.size} · ${d.date} · <span style="color:${sc}">${si} ${d.status==='ok'?'Indexado':d.status==='indexing'?'Extraindo…':'Carregando…'}</span></div>
+        ${sum?`<div class="fi-summ">${sum}</div>`:''}
+        ${d.status!=='ok'?`<div class="prog"><div class="pfill" style="width:${prog}%"></div></div>`:''}
+      </div>
+      <button class="btn btn-del btn-sm" onclick="rmDoc('${tipo}',${i})" style="flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function rmDoc(tipo,i){ KB[tipo].splice(i,1); saveKB(); renderKB(); renderKBStats(); updateSB(); updateCtx(); toast('Removido'); }
+
+function renderKBStats(){
+  const all=[...KB.rexroth,...KB.origem];
+  if(!all.length){ document.getElementById('kb-stats').innerHTML='<div style="color:var(--chrome);font-size:13px">Nenhum documento ainda.</div>'; return; }
+  const byFab={};
+  all.forEach(d=>{ byFab[d.fabricante]=(byFab[d.fabricante]||0)+1; });
+  document.getElementById('kb-stats').innerHTML=Object.entries(byFab).map(([f,n])=>`
+    <div style="background:var(--steel-mid);border:1px solid var(--border);border-radius:var(--radius);padding:13px">
+      <div style="font-size:22px;font-weight:800;color:var(--red)">${n}</div>
+      <div style="font-size:12px;color:var(--chrome);margin-top:2px">${f}</div>
+    </div>`).join('');
+}
+
+function saveKB(){
+  try{ localStorage.setItem('rx-kb',JSON.stringify({rexroth:KB.rexroth.map(d=>({...d,b64:undefined})),origem:KB.origem.map(d=>({...d,b64:undefined}))})); }catch(e){}
+}
+
+// ══════════════════════════════════════════════════════
+// BOM
+// ══════════════════════════════════════════════════════
+function addBOM(){ if(!currentResult) return; BOM.push({...currentResult,qty:1,bomId:Date.now()}); toast('"'+currentResult.rexroth+'" adicionado à BOM!'); }
+function addHist(item,cod,fromIA=false){
+  HIST.unshift({id:Date.now(),ts:new Date().toLocaleString('pt-BR'),
+    codigoOrigem:cod,codigoRexroth:item.rexroth||item.codigo,
+    fabricante:item.fabricante||item.fabricante_origem,material:item.material,fromIA});
+}
+
+function renderBOM(){
+  const empty=document.getElementById('bom-empty');
+  const table=document.getElementById('bom-table');
+  const tbody=document.getElementById('bom-tbody');
+  if(!BOM.length){ empty.style.display='block'; table.style.display='none'; return; }
+  empty.style.display='none'; table.style.display='block';
+  tbody.innerHTML=BOM.map((item,i)=>`<tr>
+    <td><input type="number" min="1" value="${item.qty}" onchange="BOM[${i}].qty=parseInt(this.value)||1"></td>
+    <td><span class="chip ${chipCls(item.fabricante||item.fabricante_origem)}">${item.fabricante||item.fabricante_origem||'—'}</span></td>
+    <td class="mono">${item.origem||item.codigo_origem||'—'}</td>
+    <td style="color:var(--red);font-size:18px">→</td>
+    <td class="mono" style="color:#FF6666;font-weight:600">${item.rexroth||item.codigo||'—'}</td>
+    <td class="mono" style="color:var(--chrome-light)">${item.material||'—'}</td>
+    <td><span class="chip">${item.familia||'—'}</span></td>
+    <td><button class="btn-del btn btn-sm" onclick="BOM.splice(${i},1);renderBOM()">✕</button></td>
+  </tr>`).join('');
+}
+
+function limparBOM(){ if(!BOM.length) return; if(confirm('Limpar BOM?')){ BOM=[]; renderBOM(); toast('BOM limpa'); } }
+
+function exportCSV(){
+  if(!BOM.length){ toast('BOM vazia','err'); return; }
+  const h='Qtd,Fabricante,Código Origem,Código Rexroth,Material Number,Família\n';
+  const rows=BOM.map(i=>`${i.qty},"${i.fabricante||i.fabricante_origem||''}","${i.origem||i.codigo_origem||''}","${i.rexroth||i.codigo||''}","${i.material||''}","${i.familia||''}"`).join('\n');
+  const blob=new Blob([h+rows],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='crossover-bom-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); toast('CSV exportado!');
+}
+
+function copiarLista(){
+  if(!BOM.length){ toast('BOM vazia','err'); return; }
+  const txt=BOM.map(i=>`${i.qty}x | ${i.fabricante||i.fabricante_origem||''}: ${i.origem||i.codigo_origem||''} → Rexroth: ${i.rexroth||i.codigo||''} (${i.material||''})`).join('\n');
+  navigator.clipboard.writeText(txt).then(()=>toast('Lista copiada!'));
+}
+
+// ══════════════════════════════════════════════════════
+// HISTÓRICO
+// ══════════════════════════════════════════════════════
+function renderHist(){
+  const el=document.getElementById('hist-list');
+  if(!HIST.length){ el.innerHTML='<div class="empty"><div style="font-size:48px;opacity:.2;margin-bottom:14px">🕐</div><p>Nenhuma conversão ainda.</p></div>'; return; }
+  el.innerHTML=HIST.slice(0,40).map(h=>`
+    <div class="hist-item">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+        <div class="hist-codes">
+          <span class="mono" style="color:var(--chrome-light)">${h.codigoOrigem}</span>
+          <span class="h-arrow">→</span>
+          <span class="mono" style="color:#FF6666;font-weight:700">${h.codigoRexroth||'—'}</span>
+        </div>
+        ${h.fromIA?'<span class="badge bg-yellow">🤖 IA</span>':'<span class="badge bg-chrome">Base</span>'}
+      </div>
+      <div style="font-size:11px;color:var(--chrome)">${h.ts} · ${h.fabricante||'?'} → Rexroth · ${h.material||'—'}</div>
+    </div>`).join('');
+}
+
+function limparHist(){ if(!HIST.length) return; if(confirm('Limpar histórico?')){ HIST=[]; renderHist(); renderStats(); toast('Limpo'); } }
+
+// ══════════════════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════════════════
+function saveKey(){
+  const k=document.getElementById('keyIn').value.trim();
+  if(!k){ toast('Cole a API key primeiro','err'); return; }
+  localStorage.setItem('rx-key',k);
+  setApiStatus(true); toast('API key salva!');
+}
+
+function setApiStatus(ok){
+  document.getElementById('apiDot').className='dot '+(ok?'ok':'err');
+  document.getElementById('apiTxt').textContent=ok?'API conectada':'API não configurada';
+}
+
+function exportDB(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='rx-db-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); toast('Exportado!');
+}
+
+function importDB(inp){
+  const f=inp.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=e=>{ try{ const d=JSON.parse(e.target.result); if(Array.isArray(d)){ DB=d; initSelects(); renderStats(); toast('Base importada! '+d.length+' conversões.'); } else toast('Formato inválido','err'); }catch{ toast('Erro ao importar','err'); } };
+  r.readAsText(f);
+}
+
+function exportKB(){
+  const blob=new Blob([JSON.stringify(KB,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='rx-kb-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); toast('Exportado!');
+}
+
+function clearKB(){ if(!confirm('Limpar todos os catálogos?')) return; KB={rexroth:[],origem:[]}; localStorage.removeItem('rx-kb'); renderKB(); renderKBStats(); updateSB(); updateCtx(); toast('Base limpa'); }
+
+// ══════════════════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════════════════
+function updateSB(){
+  document.getElementById('sb-conv').textContent=DB.length;
+  document.getElementById('sb-cat').textContent=KB.rexroth.length+KB.origem.length;
+}
+
+function updateCtx(){
+  const ro=KB.rexroth.filter(d=>d.status==='ok').length;
+  const oo=KB.origem.filter(d=>d.status==='ok').length;
+  const ctRex=document.getElementById('ct-rex');
+  const ctOrig=document.getElementById('ct-orig');
+  if(ctRex) ctRex.textContent=ro+' documento'+(ro!==1?'s':'');
+  if(ctOrig) ctOrig.textContent=oo+' documento'+(oo!==1?'s':'');
+  const cdRex=document.getElementById('cd-rex');
+  const cdOrig=document.getElementById('cd-orig');
+  if(cdRex) cdRex.className='ctx-dot'+(ro?' ok':'');
+  if(cdOrig) cdOrig.className='ctx-dot'+(oo?' ok':'');
+  const cxRex=document.getElementById('ctx-rex');
+  const cxOrig=document.getElementById('ctx-orig');
+  if(cxRex) cxRex.classList.toggle('lit',ro>0);
+  if(cxOrig) cxOrig.classList.toggle('lit',oo>0);
+}
+
+function chipCls(fab){
+  if(!fab) return '';
+  const f=fab.toLowerCase();
+  if(f.includes('parker')) return 'parker';
+  if(f.includes('sun')) return 'sun';
+  if(f.includes('eaton')||f.includes('vickers')) return 'eaton';
+  if(f.includes('bosch')) return 'bosch';
+  return '';
+}
+
+function fmtSz(b){ if(b<1024) return b+'B'; if(b<1048576) return (b/1024).toFixed(1)+'KB'; return (b/1048576).toFixed(1)+'MB'; }
+
+function copiarCod(){ const c=document.getElementById('res-cod').textContent; navigator.clipboard.writeText(c).then(()=>toast('Código copiado!')); }
+function abrirDS(){ if(!currentResult?.datasheet) return; window.open(`https://www.boschrexroth.com/documents/12433/902611/re${currentResult.datasheet}.pdf`,'_blank'); }
+
+function toast(msg,t=''){
+  const el=document.createElement('div');
+  el.className='toast'+(t==='err'?' err':'');
+  el.textContent=msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>el.remove(),3500);
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+(function init(){
+  try{
+    const k=localStorage.getItem('rx-kb');
+    if(k){ const d=JSON.parse(k); KB.rexroth=d.rexroth||[]; KB.origem=d.origem||[]; }
+    const key=localStorage.getItem('rx-key');
+    if(key){ document.getElementById('keyIn').value=key; setApiStatus(true); }
+  }catch(e){}
+  initSelects();
+  renderStats();
+  renderKB();
+  renderKBStats();
+  updateSB();
+  updateCtx();
+})();
+</script>
+</body>
+</html>
