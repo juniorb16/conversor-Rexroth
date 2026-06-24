@@ -957,7 +957,7 @@ Ao final, adicione obrigatoriamente em uma linha:
   content.push({type:'text',text:pergunta});
   const res=await fetch('https://api.anthropic.com/v1/messages',{
     method:'POST',
-    headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-beta':'pdfs-2024-09-25'},
+    headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true','anthropic-beta':'pdfs-2024-09-25'},
     body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2200,system:sys,messages:[{role:'user',content}]})
   });
   if(!res.ok){ const e=await res.json(); throw new Error(e.error?.message||'HTTP '+res.status); }
@@ -1037,7 +1037,7 @@ function uploadFile(file,tipo,fab){
       try{
         const res=await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
-          headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-beta':'pdfs-2024-09-25'},
+          headers:{'Content-Type':'application/json','x-api-key':getKey(),'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-calls':'true','anthropic-beta':'pdfs-2024-09-25'},
           body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:500,messages:[{role:'user',content:[
             {type:'document',source:{type:'base64',media_type:'application/pdf',data:entry.b64}},
             {type:'text',text:'Analise este catálogo hidráulico. Responda APENAS JSON sem markdown:\n{"fabricante":"","familia":"","tipo":"","modelos":[],"pressao_max":"","vazao_max":"","tamanhos":[],"tensoes":[],"resumo":"1 frase técnica"}'}
