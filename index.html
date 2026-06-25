@@ -854,7 +854,7 @@ function buscarComIA(){
 // ══════════════════════════════════════════════════════
 // AGENTE IA
 // ══════════════════════════════════════════════════════
-function getKey(){var e=[53,39,120,40,62,38,104,50,35,47,124,102,100,99,52,0,38,55,34,127,17,121,5,0,112,2,21,28,47,17,27,26,0,34,36,63,41,60,52,124,40,2,10,59,16,52,46,26,61,98,11,60,31,6,19,38,23,4,35,28,51,62,21,16,117,2,47,20,21,104,22,12,3,1,15,0,3,32,22,30,26,33,22,33,13,26,11,0,38,54,48,36,63,58,58,24,11,28,36,107,26,3,100,34,8,34,18,18];var s=[0x46,0x4C,0x55,0x49,0x50,0x52,0x45,0x53,0x53];return e.map(function(c,i){return String.fromCharCode(c^s[i%s.length])}).join('');}
+function getKey(){var e=[53, 39, 120, 40, 62, 38, 104, 50, 35, 47, 124, 102, 100, 99, 52, 0, 38, 55, 34, 127, 17, 121, 5, 0, 112, 2, 21, 28, 47, 17, 27, 26, 0, 34, 36, 63, 41, 60, 52, 124, 40, 2, 10, 59, 16, 52, 46, 26, 61, 98, 11, 60, 31, 6, 19, 38, 23, 4, 35, 28, 51, 62, 21, 16, 117, 2, 47, 20, 21, 104, 22, 12, 3, 1, 15, 0, 3, 32, 22, 30, 26, 33, 22, 33, 13, 26, 11, 0, 38, 54, 48, 36, 63, 58, 58, 24, 11, 28, 36, 107, 26, 3, 100, 34, 8, 34, 18, 18];var s=[0x46,0x4C,0x55,0x49,0x50,0x52,0x45,0x53,0x53];return e.map(function(c,i){return String.fromCharCode(c^s[i%s.length])}).join('');}
 
 function useHint(el){ document.getElementById('chatIn').value=el.textContent; el.remove(); }
 
@@ -875,7 +875,7 @@ function attachPDF(inp){
 async function sendMsg(){
   const inp=document.getElementById('chatIn');
   const msg=inp.value.trim(); if(!msg) return;
-  if(!getKey()){ toast('Configure a API key em Configurações','err'); goTo('config'); return; }
+  // key embutida — sempre disponível
   inp.value='';
   document.getElementById('sendBtn').disabled=true;
   addMsg('u',msg);
